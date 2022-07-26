@@ -1,7 +1,7 @@
 import React from 'react';
 import { SafeAreaView } from 'react-native';
 
-import { TaskList } from './src/components/TaskList';
+import { TaskList } from './src/screens/TaskList';
 
 import styles from './styles';
 

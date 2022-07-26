@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, ImageBackground, FlatList, TouchableOpacity, Platform } from 'react-native';
+import { View, Text, ImageBackground, FlatList, TouchableOpacity, Platform, Alert } from 'react-native';
 import moment from 'moment';
 import 'moment/locale/pt-br';
 
-import { Task } from '../Task';
+import { Task } from '../../components/Task';
+import { AddTask } from '../../components/AddTask';
 
 import todayImage from '../../assets/images/today.jpeg';
 
@@ -15,6 +16,7 @@ const TaskList = () => {
   const  today = moment().locale('pt-br').format('ddd, D [de] MMMM');
   const [showDoneTasks, setShowDoneTasks] = useState(true);
   const [visibleTasks, setVisibleTasks] = useState([]);
+  const [show, setShow] = useState(false);
 
   const [tasks, setTasks] = useState([
     { 
@@ -33,7 +35,7 @@ const TaskList = () => {
 
   useEffect(() => {
     filterTasks();
-  }, [showDoneTasks])
+  }, [showDoneTasks, tasks])
 
   const toggleFilter = () => setShowDoneTasks(!showDoneTasks);
 
@@ -59,8 +61,30 @@ const TaskList = () => {
     setTasks(tasksArray);
     filterTasks();
   }
+
+  function addTask(newTask) {
+    if(!newTask.desc || !newTask.desc.trim()) {
+      Alert.alert('Dados Inválidos', 'Descrição não informada!')
+      return
+    }
+
+    const tasksArray = [...tasks];
+
+    tasksArray.push({
+      id: Math.random(),
+      desc: newTask.desc,
+      estimateAt: newTask.estimateAt,
+      doneAt: null
+    });
+
+    setTasks(tasksArray);
+    setShow(false);
+  }
+
+  const handleModal = () => setShow(!show)
   return (
     <View style={styles.container}>
+      <AddTask show={show} onCancel={handleModal} onSave={addTask} />
       <ImageBackground source={todayImage} style={styles.background}>
         <View style={styles.iconBar}>
           <TouchableOpacity onPress={toggleFilter}>
@@ -79,6 +103,9 @@ const TaskList = () => {
           renderItem={({item}) => <Task task={item} toggleTask={toggleTask} />}
         />
       </View>
+      <TouchableOpacity style={styles.btnAdd} onPress={handleModal} activeOpacity={0.7}>
+        <Icon name='plus' size={20} color={commonStyles.colors.secondary} />
+      </TouchableOpacity>
     </View>
   )
 }
