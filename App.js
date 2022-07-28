@@ -1,14 +1,35 @@
-import React from 'react';
-import { SafeAreaView } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { SafeAreaView, ActivityIndicator } from 'react-native';
+import { NavigationContainer, useNavigation } from '@react-navigation/native';
+import 'react-native-gesture-handler';
+import AsyncStorage from '@react-native-community/async-storage';
 
-import { TaskList } from './src/screens/TaskList';
+import { Routes } from './src/routes/routes';
 
 import styles from './styles';
 
 const App = () => {
+  const [loading, setLoading] = useState(true);
+
+  const navigation = useNavigation();
+
+  useEffect(() => {
+    const userStorage = AsyncStorage.getItem('user');
+    if(userStorage) {
+      navigation.navigate('Home');
+      setLoading(false);
+    }
+  }, [])
+
   return (
     <SafeAreaView style={styles.container}>
-      <TaskList />
+     {loading ?
+        <ActivityIndicator color='#fff'  size={60}/>
+      :
+        <NavigationContainer>
+            <Routes />
+        </NavigationContainer>
+      }
     </SafeAreaView>
   )
 }

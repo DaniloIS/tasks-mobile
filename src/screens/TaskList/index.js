@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, ImageBackground, FlatList, TouchableOpacity, Platform, Alert } from 'react-native';
 import moment from 'moment';
 import 'moment/locale/pt-br';
+import { useNavigation } from '@react-navigation/native';
+import '../../routes/drawer.routes'
 
 import { Task } from '../../components/Task';
 import { AddTask } from '../../components/AddTask';
@@ -11,27 +13,58 @@ import todayImage from '../../assets/images/today.jpeg';
 import styles from './styles';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import commonStyles from '../../commonStyles';
+import AsyncStorage from '@react-native-community/async-storage';
+import api from '../../services/api';
+
+const initialState = [
+  {
+    id: 1,
+    desc: 'Comprar Livro',
+    estimateAt: new Date(),
+    doneAt: new Date()
+  },
+  {
+    id: 2,
+    desc: 'Ler Livro',
+    estimateAt: new Date(),
+    doneAt: null
+  },
+]
 
 const TaskList = () => {
   const  today = moment().locale('pt-br').format('ddd, D [de] MMMM');
   const [showDoneTasks, setShowDoneTasks] = useState(true);
   const [visibleTasks, setVisibleTasks] = useState([]);
   const [show, setShow] = useState(false);
+  const [user, setUser] = useState({})
+  const [tasks, setTasks] = useState([]);
 
-  const [tasks, setTasks] = useState([
-    { 
-      id: 1,
-      desc: 'Comprar Livro',
-      estimateAt: new Date(),
-      doneAt: new Date()
-    },
-    {
-      id: 2,
-      desc: 'Ler Livro',
-      estimateAt: new Date(),
-      doneAt: null
-    },
-  ]);
+  const navigation = useNavigation();
+
+  async function loadUser() {
+    const userStorage = await AsyncStorage.getItem('user')
+    setUser(JSON.parse(userStorage))
+  }
+
+  useEffect(() => {
+    if(user.id) api.get(`/tasks/user/${user.id}`).then(res => {
+      setTasks(res.data)
+      console.log(res.data)
+    })
+
+  }, [user])
+
+
+  async function loadTasks() {
+    const stateString = await AsyncStorage.getItem('tasks');
+    const stateTasks = JSON.parse(stateString) || tasks
+    setTasks(stateTasks);
+  }
+
+  useEffect(() => {
+    loadTasks();
+    loadUser();
+  }, [])
 
   useEffect(() => {
     filterTasks();
@@ -48,6 +81,7 @@ const TaskList = () => {
       visTasks = tasks.filter(pending)
     }
     setVisibleTasks(visTasks)
+    AsyncStorage.setItem('tasks', JSON.stringify(tasks))
   }
 
   function toggleTask(id) {
@@ -62,13 +96,19 @@ const TaskList = () => {
     filterTasks();
   }
 
-  function addTask(newTask) {
+  async function addTask(newTask) {
     if(!newTask.desc || !newTask.desc.trim()) {
       Alert.alert('Dados Inválidos', 'Descrição não informada!')
       return
     }
 
     const tasksArray = [...tasks];
+    console.log(newTask)
+    await api.post('/tasks', {
+      desc: newTask.desc,
+      estimateAt: newTask.estimateAt,
+      userId: user.id
+    })
 
     tasksArray.push({
       id: Math.random(),
@@ -77,8 +117,15 @@ const TaskList = () => {
       doneAt: null
     });
 
+
     setTasks(tasksArray);
     setShow(false);
+  }
+
+  function deleteTask(id) {
+    const tasksArray = tasks.filter(task => taks.id !== id);
+
+    setTasks(tasksArray);
   }
 
   const handleModal = () => setShow(!show)
@@ -87,6 +134,9 @@ const TaskList = () => {
       <AddTask show={show} onCancel={handleModal} onSave={addTask} />
       <ImageBackground source={todayImage} style={styles.background}>
         <View style={styles.iconBar}>
+        <TouchableOpacity>
+            <Icon name='bars' size={20} color={commonStyles.colors.secondary} />
+          </TouchableOpacity>
           <TouchableOpacity onPress={toggleFilter}>
             <Icon name={showDoneTasks ? 'eye' : 'eye-slash'} size={20} color={commonStyles.colors.secondary} />
           </TouchableOpacity>
@@ -100,7 +150,7 @@ const TaskList = () => {
         <FlatList
           data={visibleTasks}
           keyExtractor={item => `${item.id}`}
-          renderItem={({item}) => <Task task={item} toggleTask={toggleTask} />}
+          renderItem={({item}) => <Task task={item} toggleTask={toggleTask} onDelete={deleteTask} />}
         />
       </View>
       <TouchableOpacity style={styles.btnAdd} onPress={handleModal} activeOpacity={0.7}>

@@ -11,7 +11,7 @@ import commonStyles from '../../commonStyles';
 
 const initialState = {
   desc: '',
-  date: new Date()
+  estimateAt: new Date()
 };
 
 const AddTask = ({ onCancel, show, onSave }) => {
@@ -28,15 +28,15 @@ const AddTask = ({ onCancel, show, onSave }) => {
 
   function getDateTimePicker() {
     let datePicker = <DateTimePicker
-      value={form.date}
+      value={form.estimateAt}
       onChange={(_, date) => {{
-        setForm({ ...form, date: date})}
+        setForm({ ...form, estimateAt: date})}
         setShowDatePicker(false)
       }}
       mode='date'
     />
 
-    const dateString = moment(form.date).format('ddd, D [de] MMMMM [de] YYYY')
+    const dateString = moment(form.estimateAt).format('ddd, D [de] MMMMM [de] YYYY')
 
     if(Platform.OS === 'android') {
       datePicker = (
